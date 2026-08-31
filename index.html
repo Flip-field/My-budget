@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<title>My Budget — V1</title>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--text:#172033;--muted:#667085;--line:#e5e7eb;--accent:#2563eb;--good:#15803d;--bad:#b91c1c;--warn:#b45309}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{background:#111827;color:white;padding:20px 16px 16px;position:sticky;top:0;z-index:5} header h1{margin:0 0 4px;font-size:22px} header p{margin:0;color:#cbd5e1;font-size:13px}
+nav{display:flex;gap:6px;overflow:auto;padding:10px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:78px;z-index:4} nav button{border:0;background:#eef2f7;padding:9px 13px;border-radius:999px;white-space:nowrap;font-weight:600;color:#344054} nav button.active{background:var(--accent);color:white}
+main{max-width:1100px;margin:auto;padding:16px}.view{display:none}.view.active{display:block}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 2px #00000008}.metric{font-size:26px;font-weight:750;margin-top:4px}.label{font-size:13px;color:var(--muted)}h2{font-size:18px;margin:8px 0 14px}h3{font-size:15px;margin:0 0 10px}
+table{width:100%;border-collapse:collapse;background:white;border:1px solid var(--line);border-radius:12px;overflow:hidden}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{font-size:12px;color:var(--muted);background:#f8fafc}td input{width:100%;min-width:70px;border:1px solid var(--line);border-radius:7px;padding:7px;text-align:right}td input[type=text]{text-align:left}
+button,.button{cursor:pointer;border:0;border-radius:9px;padding:9px 12px;background:var(--accent);color:white;font-weight:650}.secondary{background:#eef2f7;color:#344054}.danger{background:#fee2e2;color:#991b1b}.small{font-size:12px;padding:6px 8px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:white}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.notice{padding:11px;border-radius:10px;background:#eff6ff;color:#1e40af;font-size:13px}.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:25px}.bar{height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden}.bar span{display:block;height:100%;background:var(--accent)}.report-row{margin:12px 0}.report-row .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+@media(max-width:600px){main{padding:10px}.card{padding:13px}th,td{padding:8px 6px;font-size:13px}header{padding-bottom:12px}nav{top:72px}.metric{font-size:23px}}
+</style>
+</head>
+<body>
+<header><h1>My Budget</h1><p>Personal budget • V1 • local-first</p></header>
+<nav id="nav">
+<button data-view="dashboard" class="active">Dashboard</button>
+<button data-view="budget">Budget</button>
+<button data-view="transactions">Transactions</button>
+<button data-view="report">Reports</button>
+<button data-view="settings">Settings</button>
+</nav>
+<main>
+<section id="dashboard" class="view active">
+<h2>Dashboard</h2>
+<div class="grid">
+<div class="card"><div class="label">Weekly income</div><div class="metric" id="dIncome">$0.00</div></div>
+<div class="card"><div class="label">Budgeted</div><div class="metric" id="dBudget">$0.00</div></div>
+<div class="card"><div class="label">Actual spend</div><div class="metric" id="dActual">$0.00</div></div>
+<div class="card"><div class="label">Remaining</div><div class="metric" id="dRemaining">$0.00</div></div>
+</div>
+<div class="card" style="margin-top:12px"><h3>Current week</h3><div class="formgrid"><div class="field"><label>Week starting</label><input type="date" id="weekStart"></div></div><div id="dashboardTable" style="margin-top:12px"></div></div>
+</section>
+
+<section id="budget" class="view">
+<h2>Budget</h2>
+<div class="card">
+<div class="notice">Set a fixed weekly amount or a percentage of the $1,000 weekly income. Actual spend is calculated from Transactions.</div>
+<div id="budgetTable" style="margin-top:12px"></div>
+<div class="actions"><button id="addCat">Add category</button></div>
+</div>
+</section>
+
+<section id="transactions" class="view">
+<h2>Transactions</h2>
+<div class="card">
+<h3>Add spending</h3>
+<div class="formgrid">
+<div class="field"><label>Date</label><input type="date" id="tDate"></div>
+<div class="field"><label>Description</label><input id="tDesc" placeholder="e.g. Woolworths"></div>
+<div class="field"><label>Category</label><select id="tCat"></select></div>
+<div class="field"><label>Amount ($)</label><input type="number" step="0.01" min="0" id="tAmount" placeholder="0.00"></div>
+</div>
+<div class="actions"><button id="addTx">Add transaction</button></div>
+</div>
+<div class="card" style="margin-top:12px"><h3>Transaction history</h3><div id="txTable"></div></div>
+</section>
+
+<section id="report" class="view">
+<h2>Monthly / Custom Report</h2>
+<div class="card">
+<div class="formgrid">
+<div class="field"><label>Start date</label><input type="date" id="rStart"></div>
+<div class="field"><label>End date</label><input type="date" id="rEnd"></div>
+</div>
+<div class="actions"><button id="generate">Generate report</button></div>
+</div>
+<div id="reportOutput" style="margin-top:12px"></div>
+</section>
+
+<section id="settings" class="view">
+<h2>Settings & Data</h2>
+<div class="card">
+<h3>Budget setup</h3>
+<div class="formgrid">
+<div class="field"><label>Weekly income ($)</label><input type="number" id="income" min="0" step="0.01"></div>
+<div class="field"><label>Currency</label><input value="AUD" disabled></div>
+</div>
+<div class="actions"><button id="saveIncome">Save income</button></div>
+<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+<h3>Backup</h3>
+<p class="label">Your data is stored in this browser/device. Export a backup periodically so you can restore it after changing or clearing browser data.</p>
+<div class="actions"><button id="export" class="secondary">Export backup</button><label class="button secondary" for="importFile">Import backup</label><input id="importFile" type="file" accept=".json" hidden></div>
+</div>
+</section>
+</main>
+<script>
+const KEY='my_budget_v1';
+const money=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(n)||0);
+const isoToday=()=>new Date().toISOString().slice(0,10);
+const monday=d=>{let x=new Date(d+'T12:00:00');let day=x.getDay();let diff=(day===0?-6:1-day);x.setDate(x.getDate()+diff);return x.toISOString().slice(0,10)};
+const addDays=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ income:1000,
+ categories:[
+  {id:'rent',name:'Rent',type:'fixed',value:220},
+  {id:'groceries',name:'Groceries',type:'percent',value:35},
+  {id:'personal',name:'Personal',type:'percent',value:10},
+  {id:'alcohol',name:'Alcohol',type:'fixed',value:50},
+  {id:'fun',name:'Fun / Entertainment',type:'fixed',value:70},
+  {id:'savings',name:'Savings',type:'fixed',value:200}
+ ],
+ transactions:[]
+};
+function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
+function budgetAmount(c){return c.type==='percent'?data.income*c.value/100:c.value}
+function actualFor(c,start,end){return data.transactions.filter(t=>t.category===c.id&&t.date>=start&&t.date<=end).reduce((a,t)=>a+Number(t.amount),0)}
+function period(){let s=document.getElementById('weekStart').value||monday(isoToday());return [s,addDays(s,6)]}
+function renderBudgetTable(start,end){
+ let rows=data.categories.map(c=>{let b=budgetAmount(c),a=actualFor(c,start,end);return `<tr><td><input type="text" data-id="${c.id}" data-k="name" value="${esc(c.name)}"></td><td><select data-id="${c.id}" data-k="type"><option value="fixed" ${c.type==='fixed'?'selected':''}>$ fixed</option><option value="percent" ${c.type==='percent'?'selected':''}>% income</option></select></td><td><input type="number" step=".01" data-id="${c.id}" data-k="value" value="${c.value}"></td><td>${money(b)}</td><td>${money(a)}</td><td class="${b-a>=0?'good':'bad'}">${money(b-a)}</td><td><button class="danger small" data-del="${c.id}">×</button></td></tr>`}).join('');
+ return `<table><thead><tr><th>Category</th><th>Rule</th><th>Value</th><th>Budget</th><th>Actual</th><th>Remaining</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="empty">No categories</td></tr>'}</tbody></table>`;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function renderDashboard(){
+ let [s,e]=period(), budget=data.categories.reduce((a,c)=>a+budgetAmount(c),0), actual=data.transactions.filter(t=>t.date>=s&&t.date<=e).reduce((a,t)=>a+Number(t.amount),0);
+ dIncome.textContent=money(data.income);dBudget.textContent=money(budget);dActual.textContent=money(actual);dRemaining.textContent=money(budget-actual);
+ dashboardTable.innerHTML=renderBudgetTable(s,e);
+}
+function renderBudget(){budgetTable.innerHTML=renderBudgetTable(...period())}
+function renderCats(){tCat.innerHTML=data.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+function renderTx(){
+ let arr=[...data.transactions].sort((a,b)=>b.date.localeCompare(a.date));
+ txTable.innerHTML=arr.length?`<table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead><tbody>${arr.map(t=>`<tr><td>${t.date}</td><td>${esc(t.desc)}</td><td>${esc(data.categories.find(c=>c.id===t.category)?.name||'Deleted')}</td><td>${money(t.amount)}</td><td><button class="danger small" data-txdel="${t.id}">×</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No transactions yet.</div>';
+}
+function renderAll(){renderDashboard();renderBudget();renderCats();renderTx();income.value=data.income}
+function generateReport(){
+ let s=rStart.value,e=rEnd.value;if(!s||!e||s>e){reportOutput.innerHTML='<div class="card bad">Choose a valid start and end date.</div>';return}
+ let tx=data.transactions.filter(t=>t.date>=s&&t.date<=e), spend=tx.reduce((a,t)=>a+Number(t.amount),0), days=Math.floor((new Date(e)-new Date(s))/86400000)+1, weeks=days/7;
+ let rows=data.categories.map(c=>{let a=actualFor(c,s,e);return {c,a}}); 
+ let top=[...rows].sort((x,y)=>y.a-x.a);
+ let html=`<div class="grid"><div class="card"><div class="label">Report period</div><div class="metric" style="font-size:18px">${s} → ${e}</div></div><div class="card"><div class="label">Total spending</div><div class="metric">${money(spend)}</div></div><div class="card"><div class="label">Average / day</div><div class="metric">${money(spend/days)}</div></div><div class="card"><div class="label">Transactions</div><div class="metric">${tx.length}</div></div></div>`;
+ html+=`<div class="card" style="margin-top:12px"><h3>Spending by category</h3>`;
+ for(const x of top){let pct=spend?x.a/spend*100:0;html+=`<div class="report-row"><div class="top"><span>${esc(x.c.name)}</span><span>${money(x.a)} (${pct.toFixed(1)}%)</span></div><div class="bar"><span style="width:${Math.min(pct,100)}%"></span></div></div>`}
+ html+='</div>';
+ html+=`<div class="card" style="margin-top:12px"><h3>Transactions in period</h3>${tx.length?`<table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th></tr></thead><tbody>${tx.sort((a,b)=>a.date.localeCompare(b.date)).map(t=>`<tr><td>${t.date}</td><td>${esc(t.desc)}</td><td>${esc(data.categories.find(c=>c.id===t.category)?.name||'Deleted')}</td><td>${money(t.amount)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No transactions in this period.</div>'}</div>`;
+ reportOutput.innerHTML=html;
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(b.dataset.view).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
+weekStart.value=monday(isoToday());tDate.value=isoToday();rStart.value=isoToday().slice(0,8)+'01';rEnd.value=isoToday();
+weekStart.onchange=renderAll;
+saveIncome.onclick=()=>{data.income=Math.max(0,Number(income.value)||0);save()};
+addCat.onclick=()=>{let id='c'+Date.now();data.categories.push({id,name:'New category',type:'fixed',value:0});save()};
+addTx.onclick=()=>{let amount=Number(tAmount.value);if(!tDate.value||!tCat.value||!amount||amount<0){alert('Please enter a date, category and positive amount.');return}data.transactions.push({id:'t'+Date.now(),date:tDate.value,desc:tDesc.value.trim()||'Spending',category:tCat.value,amount});tDesc.value='';tAmount.value='';save()};
+generate.onclick=generateReport;
+document.addEventListener('change',e=>{let id=e.target.dataset.id;if(!id)return;let c=data.categories.find(x=>x.id===id);if(!c)return;c[e.target.dataset.k]=e.target.dataset.k==='value'?Number(e.target.value):e.target.value;save()});
+document.addEventListener('click',e=>{let id=e.target.dataset.del;if(id){data.categories=data.categories.filter(c=>c.id!==id);save()}let tid=e.target.dataset.txdel;if(tid){data.transactions=data.transactions.filter(t=>t.id!==tid);save()}});
+export.onclick=()=>{let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='my-budget-backup-'+isoToday()+'.json';a.click();URL.revokeObjectURL(a.href)};
+importFile.onchange=async e=>{try{let obj=JSON.parse(await e.target.files[0].text());if(!obj.categories||!Array.isArray(obj.transactions))throw Error();data=obj;save();alert('Backup restored.')}catch{alert('That backup file could not be imported.')}e.target.value=''};
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderAll();
+</script>
+</body>
+</html>
